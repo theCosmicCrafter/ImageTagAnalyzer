@@ -2,7 +2,7 @@ import aiohttp
 import logging
 
 from datetime import datetime, timezone
-from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi import APIRouter, File, UploadFile, HTTPException, Request
 from sqlalchemy import select
 
 from app.database import async_session_maker
@@ -22,6 +22,7 @@ router = APIRouter(
 
 @router.post("/")
 async def upload_image(
+    request: Request,
     file: UploadFile = File(..., description="Image file to process"),
     confidence_threshold: float = 30.0,
     language: str = "en",
@@ -41,32 +42,32 @@ async def upload_image(
 
         params = {"language": language}
 
-        async with aiohttp.ClientSession() as http_session:
-            form_data = aiohttp.FormData()
-            form_data.add_field(
-                "image",
-                image_data,
-                filename=file.filename,
-                content_type=file.content_type,
-            )
+        http_session = request.app.state.http_session
+        form_data = aiohttp.FormData()
+        form_data.add_field(
+            "image",
+            image_data,
+            filename=file.filename,
+            content_type=file.content_type,
+        )
 
-            async with http_session.post(
-                settings.IMAGGA_API_URL,
-                auth=aiohttp.BasicAuth(
-                    settings.IMAGGA_API_KEY, settings.IMAGGA_API_SECRET
-                ),
-                data=form_data,
-                params=params,
-                timeout=30,
-            ) as response:
-                if response.status != 200:
-                    error_text = await response.text()
-                    raise HTTPException(
-                        status_code=response.status,
-                        detail=f"Imagga API error: {error_text}",
-                    )
+        async with http_session.post(
+            settings.IMAGGA_API_URL,
+            auth=aiohttp.BasicAuth(
+                settings.IMAGGA_API_KEY, settings.IMAGGA_API_SECRET
+            ),
+            data=form_data,
+            params=params,
+            timeout=30,
+        ) as response:
+            if response.status != 200:
+                error_text = await response.text()
+                raise HTTPException(
+                    status_code=response.status,
+                    detail=f"Imagga API error: {error_text}",
+                )
 
-                imagga_data = await response.json()
+            imagga_data = await response.json()
 
         optimal_tags = get_optimal_tags(
             imagga_data["result"]["tags"], confidence_threshold
