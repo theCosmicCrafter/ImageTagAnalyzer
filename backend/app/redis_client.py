@@ -1,4 +1,4 @@
-import redis
+import redis.asyncio as redis
 import json
 from app.config import settings
 
@@ -10,10 +10,10 @@ redis_client = redis.Redis(
 )
 
 
-def get_cached_data(key):
-    data = redis_client.get(key)
+async def get_cached_data(key):
+    data = await redis_client.get(key)
     return json.loads(data) if data else None
 
 
-def set_cached_data(key, data, expire=3600):
-    redis_client.setex(key, expire, json.dumps(data))
+async def set_cached_data(key, data, expire=3600):
+    await redis_client.setex(key, expire, json.dumps(data))
