@@ -5,6 +5,7 @@ from sqlalchemy import distinct, func, select
 
 from app.database import async_session_maker
 from app.models import ImageTag, Image
+from app.redis_client import get_cached_data, set_cached_data
 from app.utils import *
 
 
@@ -81,6 +82,13 @@ async def get_top_tags_analytics(limit: int = 5, min_confidence: float = 30.0):
 
 @router.get("/stats/")
 async def get_overall_stats():
+    try:
+        cached_stats = await get_cached_data("overall_stats")
+        if cached_stats:
+            return cached_stats
+    except Exception as e:
+        logger.error(f"Redis error: {str(e)}")
+
     async with async_session_maker() as session:
         try:
             total_images_result = await session.execute(select(func.count(Image.id)))
@@ -110,7 +118,7 @@ async def get_overall_stats():
             highest_confidence_result = await session.execute(highest_confidence_stmt)
             highest_confidence_tag = highest_confidence_result.first()
 
-            return {
+            result = {
                 "total_images": total_images,
                 "total_tags": total_tags,
                 "avg_tags_per_image": round(avg_tags_per_image, 2),
@@ -129,6 +137,12 @@ async def get_overall_stats():
                     ),
                 },
             }
+            try:
+                await set_cached_data("overall_stats", result, expire=3600)
+            except Exception as e:
+                logger.error(f"Redis error: {str(e)}")
+
+            return result
 
         except Exception as e:
             logger.error(f"Error getting stats: {str(e)}")
