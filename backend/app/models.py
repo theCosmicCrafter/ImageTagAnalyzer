@@ -33,7 +33,6 @@ class Image(Base):
         "ImageTag",
         back_populates="image",
         cascade="all, delete-orphan",
-        lazy="selectin",
     )
 
     def __repr__(self):
