@@ -34,7 +34,7 @@ const TagCloud = ({ tags }) => {
             <div className="flex flex-wrap gap-3">
                 {tags.map((tag, index) => (
                     <span
-                        key={index}
+                        key={tag.tag_name}
                         className={`
               inline-flex items-center justify-center border-2 font-semibold
               transition-all duration-200 hover:scale-105 hover:shadow-md
