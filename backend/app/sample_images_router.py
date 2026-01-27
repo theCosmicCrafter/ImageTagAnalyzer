@@ -96,8 +96,6 @@ async def load_sample_images():
     async with async_session_maker() as session:
         await session.execute(delete(SampleImage))
         await session.commit()
-        for sample_data in SAMPLE_IMAGES:
-            stmt = insert(SampleImage).values(**sample_data)
-            await session.execute(stmt)
+        await session.execute(insert(SampleImage), SAMPLE_IMAGES)
 
         await session.commit()

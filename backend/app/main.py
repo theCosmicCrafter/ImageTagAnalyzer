@@ -1,3 +1,6 @@
+from contextlib import asynccontextmanager
+import aiohttp
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -7,7 +10,15 @@ from app.sample_images_router import router as sample_router
 
 from app.config import settings
 
-app = FastAPI(title="Image Tagging API", version="1.0.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.http_session = aiohttp.ClientSession()
+    yield
+    await app.state.http_session.close()
+
+
+app = FastAPI(title="Image Tagging API", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

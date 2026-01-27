@@ -7,6 +7,7 @@ from app.database import async_session_maker
 from app.models import ImageTag, Image
 from app.redis_client import get_cached_data, set_cached_data
 from app.utils import *
+from app.redis_client import get_cached_data_async, set_cached_data_async
 
 
 logging.basicConfig(level=logging.INFO)
@@ -20,6 +21,14 @@ router = APIRouter(
 
 @router.get("/top-tags/")
 async def get_top_tags_analytics(limit: int = 5, min_confidence: float = 30.0):
+    cache_key = f"analytics:top-tags:{limit}:{min_confidence}"
+    try:
+        cached_result = await get_cached_data_async(cache_key)
+        if cached_result:
+            return cached_result
+    except Exception as e:
+        logger.warning(f"Failed to retrieve from cache: {str(e)}")
+
     async with async_session_maker() as session:
         try:
             total_images_result = await session.execute(select(func.count(Image.id)))
@@ -68,12 +77,19 @@ async def get_top_tags_analytics(limit: int = 5, min_confidence: float = 30.0):
                     }
                 )
 
-            return {
+            result_data = {
                 "total_images": total_images,
                 "avg_tags_per_image": round(avg_tags_per_image, 2),
                 "min_confidence": min_confidence,
                 "top_tags": analytics_result,
             }
+
+            try:
+                await set_cached_data_async(cache_key, result_data, expire=300)
+            except Exception as e:
+                logger.warning(f"Failed to set cache: {str(e)}")
+
+            return result_data
 
         except Exception as e:
             logger.error(f"Error generating analytics: {str(e)}")
