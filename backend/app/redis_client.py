@@ -1,3 +1,4 @@
+import redis.asyncio as redis
 import redis
 import redis.asyncio as aioredis
 import json
@@ -20,11 +21,13 @@ async_redis_client = aioredis.Redis(
 )
 
 
-def get_cached_data(key):
-    data = redis_client.get(key)
+async def get_cached_data(key):
+    data = await redis_client.get(key)
     return json.loads(data) if data else None
 
 
+async def set_cached_data(key, data, expire=3600):
+    await redis_client.setex(key, expire, json.dumps(data))
 def set_cached_data(key, data, expire=3600):
     redis_client.setex(key, expire, json.dumps(data))
 
