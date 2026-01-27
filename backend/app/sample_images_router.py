@@ -15,9 +15,9 @@ router = APIRouter(prefix="/sample-images", tags=["Sample Images"])
 
 @router.get("/")
 async def get_sample_images():
-    # cached = get_cached_data("sample_images_list")
-    # if cached:
-    #     return cached
+    cached = await get_cached_data("sample_images_list")
+    if cached:
+        return cached
 
     async with async_session_maker() as session:
         result = await session.execute(
@@ -40,16 +40,16 @@ async def get_sample_images():
             for sample in samples
         ]
 
-        # set_cached_data("sample_images_list", response_data)
+        await set_cached_data("sample_images_list", response_data)
         return response_data
 
 
 @router.post("/{sample_id}/analyze")
 async def analyze_sample_image(sample_id: int, confidence_threshold: float = 30.0):
-    # cache_key = f"sample_analysis_{sample_id}_{confidence_threshold}"
-    # cached = get_cached_data(cache_key)
-    # if cached:
-    #     return cached
+    cache_key = f"sample_analysis_{sample_id}_{confidence_threshold}"
+    cached = await get_cached_data(cache_key)
+    if cached:
+        return cached
 
     async with async_session_maker() as session:
         result = await session.execute(
@@ -87,7 +87,7 @@ async def analyze_sample_image(sample_id: int, confidence_threshold: float = 30.
             "primary_tags": [tag for tag in optimal_tags if tag["is_primary"]],
             "is_sample": True,
         }
-        # set_cached_data(cache_key, response_data, expire=86400)
+        await set_cached_data(cache_key, response_data, expire=86400)
         return response_data
 
 
