@@ -103,7 +103,7 @@ const Analytics = ({ analytics, onAnalytics, isLoading }) => {
                             <h3 className="font-bold text-lg mb-3 text-gray-700">Top Tags Ranking</h3>
                             <div className="space-y-2">
                                 {analytics.top_tags.map((tag, index) => (
-                                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <div key={tag.tag_name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                         <div className="flex items-center space-x-3">
                                             <div className={`w-3 h-3 rounded-full ${getBubbleColor(index)}`}></div>
                                             <span className="font-medium">{tag.tag_name}</span>
