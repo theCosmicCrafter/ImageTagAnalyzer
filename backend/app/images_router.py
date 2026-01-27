@@ -4,6 +4,7 @@ import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, File, UploadFile, HTTPException, Request
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.database import async_session_maker
 from app.models import ImageTag, Image
@@ -117,7 +118,9 @@ async def upload_image(
 async def get_all_images():
     async with async_session_maker() as session:
         try:
-            result = await session.execute(select(Image))
+            result = await session.execute(
+                select(Image).options(selectinload(Image.tags))
+            )
             images = result.scalars().all()
 
             images_result = []
@@ -150,7 +153,9 @@ async def get_all_images():
 async def get_image(image_id: int):
     async with async_session_maker() as session:
         try:
-            result = await session.execute(select(Image).where(Image.id == image_id))
+            result = await session.execute(
+                select(Image).options(selectinload(Image.tags)).where(Image.id == image_id)
+            )
             image = result.scalar_one_or_none()
 
             if not image:
