@@ -87,15 +87,17 @@ async def upload_image(
             session.add(db_image)
             await session.flush()
 
-            for tag_data in optimal_tags:
-                db_tag = ImageTag(
+            tags_to_add = [
+                ImageTag(
                     image_id=db_image.id,
                     tag_name=tag_data["tag_name"],
                     confidence=tag_data["confidence"],
                     language=language,
                     is_primary=tag_data["is_primary"],
                 )
-                session.add(db_tag)
+                for tag_data in optimal_tags
+            ]
+            session.add_all(tags_to_add)
 
             await session.commit()
 
