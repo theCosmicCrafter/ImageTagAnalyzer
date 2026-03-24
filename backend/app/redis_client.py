@@ -22,14 +22,12 @@ async_redis_client = aioredis.Redis(
 
 
 async def get_cached_data(key):
-    data = await redis_client.get(key)
+    data = await async_redis_client.get(key)
     return json.loads(data) if data else None
 
 
 async def set_cached_data(key, data, expire=3600):
-    await redis_client.setex(key, expire, json.dumps(data))
-def set_cached_data(key, data, expire=3600):
-    redis_client.setex(key, expire, json.dumps(data))
+    await async_redis_client.setex(key, expire, json.dumps(data))
 
 
 async def get_cached_data_async(key):
