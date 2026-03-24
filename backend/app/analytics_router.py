@@ -31,11 +31,15 @@ async def get_top_tags_analytics(limit: int = 5, min_confidence: float = 30.0):
 
     async with async_session_maker() as session:
         try:
-            total_images_result = await session.execute(select(func.count(Image.id)))
-            total_images = total_images_result.scalar() or 1
+            stmt = select(
+                select(func.count(Image.id)).scalar_subquery(),
+                select(func.count(ImageTag.id)).scalar_subquery(),
+            )
+            result = await session.execute(stmt)
+            total_images, total_tags = result.first()
 
-            total_tags_result = await session.execute(select(func.count(ImageTag.id)))
-            total_tags = total_tags_result.scalar() or 0
+            total_images = total_images or 1
+            total_tags = total_tags or 0
 
             avg_tags_per_image = total_tags / total_images if total_images > 0 else 0
             stmt = (
@@ -107,11 +111,15 @@ async def get_overall_stats():
 
     async with async_session_maker() as session:
         try:
-            total_images_result = await session.execute(select(func.count(Image.id)))
-            total_images = total_images_result.scalar() or 0
+            stmt = select(
+                select(func.count(Image.id)).scalar_subquery(),
+                select(func.count(ImageTag.id)).scalar_subquery(),
+            )
+            result = await session.execute(stmt)
+            total_images, total_tags = result.first()
 
-            total_tags_result = await session.execute(select(func.count(ImageTag.id)))
-            total_tags = total_tags_result.scalar() or 0
+            total_images = total_images or 0
+            total_tags = total_tags or 0
 
             avg_tags_per_image = total_tags / total_images if total_images > 0 else 0
 
